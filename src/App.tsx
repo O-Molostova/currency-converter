@@ -1,11 +1,10 @@
 import "./App.css";
-import { Select } from "./components/Select";
 import { useEffect, useState } from "react";
-import type { Currency } from "./types/currency";
+import { Select, Input } from "./components";
 import { convertCurrency, fetchCurrencies } from "./api/api";
-import { Input } from "./components/Input";
+import type { Currency } from "./types/currency";
 
-function App() {
+export const App = () => {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
@@ -17,13 +16,15 @@ function App() {
       setCurrencies(curr);
       if (curr.length > 1) {
         setFrom(curr[0].short_code);
-        setTo(curr[0].short_code);
+        setTo(curr[1].short_code);
       }
     });
   }, []);
 
   useEffect(() => {
-    if (!from || !to) return;
+    if (!from || !to || amount <= 0) {
+      return;
+    }
 
     convertCurrency(from, to, amount).then(setResult);
   }, [from, to, amount]);
@@ -57,6 +58,4 @@ function App() {
       </div>
     </div>
   );
-}
-
-export default App;
+};
