@@ -1,8 +1,9 @@
 import "./App.css";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Select, Input } from "./components";
 import { convertCurrency, fetchCurrencies } from "./api/api";
 import type { Currency } from "./types/currency";
+import debounce from "lodash.debounce";
 
 export const App = () => {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
@@ -21,13 +22,33 @@ export const App = () => {
     });
   }, []);
 
-  useEffect(() => {
-    if (!from || !to || amount <= 0) {
-      return;
-    }
+  const debouncedConvert = useMemo(
+    () =>
+      debounce((from: string, to: string, amount: number) => {
+        if (!from || !to || amount <= 0) {
+          setResult(null);
+          return;
+        }
 
-    convertCurrency(from, to, amount).then(setResult);
-  }, [from, to, amount]);
+        convertCurrency(from, to, amount).then(setResult);
+      }, 500),
+    []
+  );
+
+  const handleFromChange = (value: string) => {
+    setFrom(value);
+    debouncedConvert(value, to, amount);
+  };
+
+  const handleToChange = (value: string) => {
+    setTo(value);
+    debouncedConvert(from, value, amount);
+  };
+
+  const handleAmountChange = (value: number) => {
+    setAmount(value);
+    debouncedConvert(from, to, value);
+  };
 
   return (
     <div className="App">
@@ -39,10 +60,10 @@ export const App = () => {
           <Select
             currencies={currencies}
             value={from}
-            onChange={setFrom}
+            onChange={handleFromChange}
             id="from-currency"
           />
-          <Input amount={amount} setAmount={setAmount} />
+          <Input amount={amount} setAmount={handleAmountChange} />
         </div>
 
         <div className="CurrencyTo">
@@ -50,7 +71,7 @@ export const App = () => {
           <Select
             currencies={currencies}
             value={to}
-            onChange={setTo}
+            onChange={handleToChange}
             id="to-currency"
           />
           <Input amount={result ?? 0} readonly />
